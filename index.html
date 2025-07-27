@@ -68,7 +68,7 @@
     }
 
     #hanamaru img {
-      width: 300px; /* 花丸の大きさここで調整 */
+      width: 450px; /* 花丸の大きさここで調整 */
     }
   </style>
 </head>
@@ -136,7 +136,7 @@
         if (correctCount === numbers.length) {
           setTimeout(() => {
             alert('全問正解！');
-          }, 5500); // 花丸が完全に消えた後に表示
+          }, 3500); // 花丸が完全に消えた後に表示
         }
       }
     }
@@ -152,7 +152,7 @@
       setTimeout(() => {
         msg.style.display = 'none';
         hanamaru.style.display = 'none';
-      }, 5000); // フェードアウトせず、5秒後に一気に消える
+      }, 3000); // フェードアウトせず、5秒後に一気に消える
     }
 
     init();
