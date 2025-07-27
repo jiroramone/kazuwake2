@@ -360,15 +360,14 @@
       }
     }
 
-    function showHanamaruImage() {
+function showHanamaruImage() {
   hanamaruImg.style.display = 'block';
-
-  // 表示時間（ミリ秒）だけ表示して、その後非表示にする
   setTimeout(() => {
     hanamaruImg.style.display = 'none';
-  }, 3000); // ← ★ここで表示時間を調整（例：3000ms = 3秒）
+  }, 3000); // ← ★表示時間を3秒に設定
+}
 
-    }
+
   </script>
 </body>
 </html>
