@@ -1,161 +1,204 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>かずわけゲーム</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: sans-serif;
+      font-family: "Arial", sans-serif;
       text-align: center;
-      background-color: #fdf6e3;
+      background-color: #fffbe7;
       margin: 0;
       padding: 0;
     }
 
     h1 {
-      font-size: 2em;
-      margin-top: 1em;
+      font-size: 2rem;
+      margin-top: 1rem;
     }
 
-    #game-container {
+    #numberContainer {
+      margin: 2rem auto;
       display: flex;
-      justify-content: space-around;
-      margin-top: 2em;
+      justify-content: center;
       flex-wrap: wrap;
-    }
-
-    .basket {
-      width: 120px;
-      height: 200px;
-      border: 2px solid #888;
-      border-radius: 10px;
-      background-color: #f0e68c;
-      position: relative;
-    }
-
-    .basket-label {
-      position: absolute;
-      bottom: -30px;
-      width: 100%;
-      font-weight: bold;
+      gap: 1rem;
     }
 
     .number {
-      width: 80px;
-      height: 80px;
-      line-height: 80px;
-      background-color: #ffdead;
-      border: 2px solid #d2691e;
-      border-radius: 50%;
-      margin: 10px auto;
-      font-size: 2em;
-      font-weight: bold;
+      font-size: 2rem;
+      background-color: #ffd966;
+      padding: 1rem 1.5rem;
+      border-radius: 1rem;
       cursor: grab;
       user-select: none;
+      touch-action: none;
     }
 
-    #message {
-      margin-top: 1em;
-      font-size: 1.5em;
-      color: green;
-      font-weight: bold;
+    #leftBasket, #rightBasket {
+      width: 40%;
+      min-height: 150px;
+      margin: 1rem;
+      padding: 1rem;
+      border: 3px dashed #999;
+      border-radius: 1rem;
+      display: inline-block;
+      vertical-align: top;
+    }
+
+    .basketLabel {
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
     }
 
     #hanamaru {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 300px;
+      height: auto;
+      transform: translate(-50%, -50%);
+      z-index: 999;
       display: none;
-      margin-top: 1em;
     }
 
-    #hanamaru img {
-      width: 500px; /* 花丸の大きさここで調整 */
+    #message {
+      font-size: 1.5rem;
+      color: green;
+      margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .number {
+        font-size: 1.5rem;
+        padding: 0.8rem 1rem;
+      }
+
+      #leftBasket, #rightBasket {
+        width: 90%;
+        margin: 0.5rem auto;
+      }
+
+      #hanamaru {
+        width: 60%;
+      }
     }
   </style>
 </head>
 <body>
+
   <h1>かずわけゲーム</h1>
-  <div id="game-container">
-    <div class="basket" id="left-basket" ondrop="drop(event)" ondragover="allowDrop(event)">
-      <div class="basket-label">左</div>
-    </div>
-    <div class="basket" id="right-basket" ondrop="drop(event)" ondragover="allowDrop(event)">
-      <div class="basket-label">右</div>
-    </div>
+
+  <div id="numberContainer"></div>
+
+  <div id="leftBasket">
+    <div class="basketLabel">左のかご</div>
   </div>
-  <div id="number-container">
-    <!-- 数字は後で生成 -->
+
+  <div id="rightBasket">
+    <div class="basketLabel">右のかご</div>
   </div>
+
+  <img id="hanamaru" src="hanamaru.png" alt="花丸">
   <div id="message"></div>
-  <div id="hanamaru">
-    <img src="hanamaru.png" alt="花丸" />
-  </div>
 
   <script>
-    const numbers = [2, 3, 5, 6];
-    const answers = {
-      2: 'left-basket',
-      3: 'right-basket',
-      5: 'right-basket',
-      6: 'left-basket',
-    };
+    const questions = [
+      { numbers: [1, 2, 3, 4], answer: { left: [1, 3], right: [2, 4] } },
+      { numbers: [5, 6, 7, 8], answer: { left: [5, 7], right: [6, 8] } },
+      { numbers: [9, 10, 11, 12], answer: { left: [9, 11], right: [10, 12] } }
+    ];
 
-    let correctCount = 0;
+    let currentQuestion = 0;
 
-    function init() {
-      const container = document.getElementById('number-container');
-      numbers.forEach((num) => {
-        const el = document.createElement('div');
-        el.className = 'number';
-        el.textContent = num;
-        el.draggable = true;
-        el.id = 'num-' + num;
-        el.addEventListener('dragstart', drag);
-        container.appendChild(el);
+    const numberContainer = document.getElementById("numberContainer");
+    const leftBasket = document.getElementById("leftBasket");
+    const rightBasket = document.getElementById("rightBasket");
+    const hanamaru = document.getElementById("hanamaru");
+    const message = document.getElementById("message");
+
+    function loadQuestion() {
+      numberContainer.innerHTML = "";
+      leftBasket.innerHTML = '<div class="basketLabel">左のかご</div>';
+      rightBasket.innerHTML = '<div class="basketLabel">右のかご</div>';
+      message.textContent = "";
+
+      const q = questions[currentQuestion];
+      q.numbers.forEach(num => {
+        const div = document.createElement("div");
+        div.className = "number";
+        div.textContent = num;
+        div.draggable = true;
+
+        div.addEventListener("dragstart", (e) => {
+          e.dataTransfer.setData("text/plain", num);
+          e.dataTransfer.setData("text/id", e.target.id);
+          e.target.classList.add("dragging");
+        });
+
+        numberContainer.appendChild(div);
       });
     }
 
-    function drag(event) {
-      event.dataTransfer.setData('text', event.target.id);
+    function allowDrop(e) {
+      e.preventDefault();
     }
 
-    function allowDrop(event) {
-      event.preventDefault();
-    }
-
-    function drop(event) {
-      event.preventDefault();
-      const data = event.dataTransfer.getData('text');
-      const dragged = document.getElementById(data);
-      const targetId = event.currentTarget.id;
-
-      if (answers[parseInt(dragged.textContent)] === targetId) {
-        event.currentTarget.appendChild(dragged);
-        showCorrectMessage();
-
-        correctCount++;
-        if (correctCount === numbers.length) {
-          setTimeout(() => {
-            alert('全問正解！');
-          }, 2000); // 花丸が完全に消えた後に表示
-        }
+    function handleDrop(e, basket) {
+      e.preventDefault();
+      const num = e.dataTransfer.getData("text/plain");
+      const dragged = Array.from(numberContainer.children).find(div => div.textContent === num);
+      if (dragged) {
+        basket.appendChild(dragged);
+        checkAnswer();
       }
     }
 
-    function showCorrectMessage() {
-      const msg = document.getElementById('message');
-      const hanamaru = document.getElementById('hanamaru');
+    function checkAnswer() {
+      const left = Array.from(leftBasket.querySelectorAll(".number")).map(div => parseInt(div.textContent));
+      const right = Array.from(rightBasket.querySelectorAll(".number")).map(div => parseInt(div.textContent));
+      const correctLeft = questions[currentQuestion].answer.left;
+      const correctRight = questions[currentQuestion].answer.right;
 
-      msg.textContent = '正解！';
-      msg.style.display = 'block';
-      hanamaru.style.display = 'block';
+      if (left.length + right.length !== questions[currentQuestion].numbers.length) return;
 
-      setTimeout(() => {
-        msg.style.display = 'none';
-        hanamaru.style.display = 'none';
-      }, 3000); // フェードアウトせず、5秒後に一気に消える
+      const isCorrect = arraysEqual(left.sort(), correctLeft.slice().sort()) &&
+                        arraysEqual(right.sort(), correctRight.slice().sort());
+
+      if (isCorrect) {
+        showHanamaru(() => {
+          currentQuestion++;
+          if (currentQuestion < questions.length) {
+            loadQuestion();
+          } else {
+            message.textContent = "🎉 全問正解！おめでとう！";
+          }
+        });
+      } else {
+        message.textContent = "もういちどやってみよう！";
+      }
     }
 
-    init();
+    function showHanamaru(callback) {
+      hanamaru.style.display = "block";
+      setTimeout(() => {
+        hanamaru.style.display = "none";
+        callback();
+      }, 5000);
+    }
+
+    function arraysEqual(a, b) {
+      return a.length === b.length && a.every((v, i) => v === b[i]);
+    }
+
+    leftBasket.addEventListener("dragover", allowDrop);
+    rightBasket.addEventListener("dragover", allowDrop);
+    leftBasket.addEventListener("drop", (e) => handleDrop(e, leftBasket));
+    rightBasket.addEventListener("drop", (e) => handleDrop(e, rightBasket));
+
+    loadQuestion();
   </script>
+
 </body>
 </html>
