@@ -1,184 +1,379 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>かずわけゲーム</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body {
-            font-family: "Arial", sans-serif;
-            text-align: center;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-        }
-        h1 {
-            margin-top: 20px;
-        }
-        #question {
-            font-size: 2em;
-            margin: 20px;
-        }
-        .basket-container {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px;
-        }
-        .basket {
-            border: 2px dashed #aaa;
-            padding: 10px;
-            width: 40%;
-            min-height: 100px;
-            font-size: 1.5em;
-        }
-        .number {
-            display: inline-block;
-            padding: 10px 20px;
-            margin: 10px;
-            background-color: #add8e6;
-            cursor: move;
-            border-radius: 10px;
-            font-size: 1.5em;
-        }
-        #message {
-            font-size: 2em;
-            color: green;
-            margin: 20px;
-            display: none;
-        }
-        #hanamaru {
-            display: none;
-            position: fixed;
-            top: 20%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60vw; /* スマホで大きく表示 */
-            max-width: 300px;
-            z-index: 1000;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>かずわけゲーム</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background-color: #f0f8ff;
+    }
+    #title, #game {
+      margin-top: 30px;
+    }
+    #numberButtons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      justify-content: center;
+      max-width: 300px;
+      margin: 0 auto 20px;
+    }
+    #numberButtons button {
+      font-size: 24px;
+      padding: 20px 0;
+      width: 100%;
+      border-radius: 8px;
+      background-color: #eee;
+      border: 2px solid #ccc;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    #numberButtons button:hover {
+      background-color: #ddd;
+    }
+    #numberButtons button.selected {
+      background-color: #3399ff;
+      color: white;
+      border-color: #3399ff;
+    }
+    .basket {
+      width: 280px;
+      height: 280px;
+      border: 3px solid #444;
+      display: inline-block;
+      vertical-align: top;
+      margin: 10px 30px;
+      padding: 15px;
+      border-radius: 16px;
+      background-color: #f9f9f9;
+    }
+    .basket h3 {
+      font-size: 20px;
+      margin: 0 0 10px 0;
+    }
+    .apple {
+      width: 40px;
+      height: 40px;
+      background-color: red;
+      border-radius: 50%;
+      display: inline-block;
+      margin: 5px;
+      touch-action: none;
+    }
+    #completeOverlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      font-size: 48px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    canvas#fireworksCanvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 999;
+      pointer-events: none;
+    }
+    #hanamaruImg {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px; /* ← 大きさを変更 */
+      z-index: 1100;
+      pointer-events: none;
+      user-select: none;
+    }
+    #message {
+      font-size: 18px;
+      height: 1.5em;
+      margin-top: 8px;
+      color: #333;
+    }
+  </style>
 </head>
 <body>
+  <div id="title">
     <h1>かずわけゲーム</h1>
-    <div id="question"></div>
-    <div class="basket-container">
-        <div class="basket" id="basket1" ondrop="drop(event, 1)" ondragover="allowDrop(event)"></div>
-        <div class="basket" id="basket2" ondrop="drop(event, 2)" ondragover="allowDrop(event)"></div>
+    <p>数字を選んでください（3～10）</p>
+    <div id="numberButtons"></div>
+    <button id="startBtn" disabled>ゲームスタート</button>
+  </div>
+
+  <div id="game" style="display: none;">
+    <h2 id="gameTitle"></h2>
+    <div id="appleContainer"></div>
+    <div>
+      <div id="basket1" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h3>ひだりのかご</h3>
+      </div>
+      <div id="basket2" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
+        <h3>みぎのかご</h3>
+      </div>
     </div>
-    <div id="numbers"></div>
-    <div id="message">正解！</div>
-    <img id="hanamaru" src="hanamaru.png" alt="花丸">
+    <p><button id="checkBtn">こたえあわせ</button></p>
+    <p id="message"></p>
+  </div>
 
-    <script>
-        const patterns = [
-            [[1, 3, 5], [2, 4]],
-            [[2, 4], [1, 3, 5]],
-            [[6, 1], [2, 3, 4, 5]],
-            [[1, 2, 3, 6], [4, 5]],
-            [[1, 2, 3], [4, 5, 6]],
-            [[1, 6], [2, 3, 4, 5]]
-        ];
+  <div id="completeOverlay">ぜんもんせいかい！🎉</div>
+  <canvas id="fireworksCanvas"></canvas>
+  <img src="img/hanamaru.png" id="hanamaruImg" alt="花丸" />
 
-        let currentPattern;
-        let answers = [];
-        let currentIndex = 0;
+  <script>
+    const numberButtonsDiv = document.getElementById('numberButtons');
+    const startBtn = document.getElementById('startBtn');
+    const titleDiv = document.getElementById('title');
+    const gameDiv = document.getElementById('game');
+    const gameTitle = document.getElementById('gameTitle');
+    const appleContainer = document.getElementById('appleContainer');
+    const basket1 = document.getElementById('basket1');
+    const basket2 = document.getElementById('basket2');
+    const checkBtn = document.getElementById('checkBtn');
+    const messageP = document.getElementById('message');
+    const completeOverlay = document.getElementById('completeOverlay');
+    const fireworksCanvas = document.getElementById('fireworksCanvas');
+    const ctx = fireworksCanvas.getContext('2d');
+    const hanamaruImg = document.getElementById('hanamaruImg');
 
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
+    let selectedNumber = 0;
+    let patterns = [];
+    let currentPatternIndex = 0;
+    let animationId;
+    let fireworks = [];
+    let clearedPairs = [];
+
+    window.addEventListener('resize', () => {
+      fireworksCanvas.width = window.innerWidth;
+      fireworksCanvas.height = window.innerHeight;
+    });
+    fireworksCanvas.width = window.innerWidth;
+    fireworksCanvas.height = window.innerHeight;
+
+    for (let i = 3; i <= 10; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i;
+      btn.dataset.num = i;
+      btn.addEventListener('click', () => {
+        selectedNumber = Number(btn.dataset.num);
+        document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        startBtn.disabled = false;
+      });
+      numberButtonsDiv.appendChild(btn);
+    }
+
+    startBtn.addEventListener('click', () => {
+      titleDiv.style.display = 'none';
+      gameDiv.style.display = 'block';
+      generatePatterns();
+      startGameRound();
+    });
+
+    function generatePatterns() {
+      patterns = [];
+      clearedPairs = [];
+      for (let i = 1; i <= selectedNumber / 2; i++) {
+        const j = selectedNumber - i;
+        if (!patterns.some(p => (p[0] === j && p[1] === i))) {
+          patterns.push([i, j]);
         }
+      }
+    }
 
-        function loadNextQuestion() {
-            if (currentIndex >= patterns.length) {
-                setTimeout(() => {
-                    alert("全問正解！おめでとう！");
-                    location.reload();
-                }, 5000); // 花丸が消える5秒待ってから遷移
-                return;
-            }
+    function startGameRound() {
+      if (patterns.length === 0) {
+        appleContainer.innerHTML = '';
+        basket1.innerHTML = '';
+        basket2.innerHTML = '';
+        gameTitle.textContent = '';
+        messageP.textContent = '';
+        completeOverlay.style.display = 'flex';
+        startFireworks();
+        setTimeout(() => {
+          completeOverlay.style.display = 'none';
+          stopFireworks();
+          resetGame();
+        }, 3000);
+        return;
+      }
+      currentPatternIndex = Math.floor(Math.random() * patterns.length);
+      gameTitle.textContent = `もんだい：${selectedNumber} はいくつといくつにわけられる？`;
+      appleContainer.innerHTML = '';
+      basket1.innerHTML = '<h3>ひだりのかご</h3>';
+      basket2.innerHTML = '<h3>みぎのかご</h3>';
+      for (let i = 0; i < selectedNumber; i++) {
+        const apple = document.createElement('div');
+        apple.className = 'apple';
+        apple.draggable = true;
+        apple.id = 'apple' + i;
+        apple.addEventListener('dragstart', drag);
+        apple.addEventListener('touchstart', touchStart, { passive: false });
+        appleContainer.appendChild(apple);
+      }
+    }
 
-            currentPattern = patterns[currentIndex];
-            document.getElementById("question").textContent = `このかずを２つのグループにわけよう`;
-            document.getElementById("basket1").textContent = "";
-            document.getElementById("basket2").textContent = "";
-            document.getElementById("message").style.display = "none";
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
 
-            const allNumbers = [...currentPattern[0], ...currentPattern[1]];
-            shuffle(allNumbers);
+    function drag(ev) {
+      ev.dataTransfer.setData('text', ev.target.id);
+    }
 
-            const numbersDiv = document.getElementById("numbers");
-            numbersDiv.innerHTML = "";
+    function drop(ev) {
+      ev.preventDefault();
+      let target = ev.target;
+      if (target.tagName === 'H3') target = target.parentNode;
+      const data = ev.dataTransfer.getData('text');
+      const apple = document.getElementById(data);
+      target.appendChild(apple);
+    }
 
-            allNumbers.forEach(num => {
-                const div = document.createElement("div");
-                div.className = "number";
-                div.textContent = num;
-                div.draggable = true;
-                div.ondragstart = drag;
-                div.dataset.value = num;
-                numbersDiv.appendChild(div);
-            });
+    checkBtn.addEventListener('click', () => {
+      const count1 = basket1.querySelectorAll('.apple').length;
+      const count2 = basket2.querySelectorAll('.apple').length;
+      const userPair = count1 < count2 ? [count1, count2] : [count2, count1];
+      const alreadyCleared = clearedPairs.some(p => p[0] === userPair[0] && p[1] === userPair[1]);
+      if (alreadyCleared) {
+        messageP.textContent = 'このくみあわせはもうせいかいしています。つぎのもんだいへすすみましょう！';
+        return;
+      }
+
+      const idx = patterns.findIndex(p => p[0] === userPair[0] && p[1] === userPair[1]);
+
+      if (idx >= 0) {
+        messageP.textContent = `せいかい！「${userPair[0]} と ${userPair[1]}」のくみあわせをクリアしました。`;
+        showHanamaruImage();
+        patterns.splice(idx, 1);
+        clearedPairs.push(userPair);
+        setTimeout(() => {
+          messageP.textContent = '';
+          startGameRound();
+        }, 1200);
+      } else {
+        messageP.textContent = 'ちがいます。もういちどかんがえてみてね。';
+      }
+    });
+
+    function resetGame() {
+      gameDiv.style.display = 'none';
+      titleDiv.style.display = 'block';
+      startBtn.disabled = true;
+      selectedNumber = 0;
+      document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
+    }
+
+    let touchedApple = null;
+
+    function touchStart(ev) {
+      ev.preventDefault();
+      touchedApple = ev.target;
+      document.addEventListener('touchmove', touchMove, { passive: false });
+      document.addEventListener('touchend', touchEnd);
+    }
+
+    function touchMove(ev) {
+      if (!touchedApple) return;
+      const touch = ev.touches[0];
+      touchedApple.style.position = 'absolute';
+      touchedApple.style.left = (touch.clientX - 20) + 'px';
+      touchedApple.style.top = (touch.clientY - 20) + 'px';
+      touchedApple.style.zIndex = 1000;
+    }
+
+    function touchEnd(ev) {
+      if (!touchedApple) return;
+      const baskets = [basket1, basket2];
+      const touch = ev.changedTouches[0];
+      baskets.forEach(basket => {
+        const rect = basket.getBoundingClientRect();
+        if (touch.clientX > rect.left && touch.clientX < rect.right && touch.clientY > rect.top && touch.clientY < rect.bottom) {
+          basket.appendChild(touchedApple);
         }
+      });
+      touchedApple.style.position = 'static';
+      touchedApple.style.left = '';
+      touchedApple.style.top = '';
+      touchedApple.style.zIndex = '';
+      touchedApple = null;
+      document.removeEventListener('touchmove', touchMove);
+      document.removeEventListener('touchend', touchEnd);
+    }
 
-        function allowDrop(ev) {
-            ev.preventDefault();
-        }
+    function startFireworks() {
+      fireworksCanvas.width = window.innerWidth;
+      fireworksCanvas.height = window.innerHeight;
+      animationId = requestAnimationFrame(animate);
+    }
 
-        function drag(ev) {
-            ev.dataTransfer.setData("text", ev.target.dataset.value);
-        }
+    function stopFireworks() {
+      cancelAnimationFrame(animationId);
+      ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+      fireworks = [];
+    }
 
-        function drop(ev, basketNumber) {
-            ev.preventDefault();
-            const data = ev.dataTransfer.getData("text");
-            const basket = document.getElementById(`basket${basketNumber}`);
-            const existing = basket.querySelector(`[data-value="${data}"]`);
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+      ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+      if (Math.random() < 0.05) createFirework();
+      fireworks.forEach(f => f.update());
+      fireworks = fireworks.filter(f => f.alpha > 0);
+      animationId = requestAnimationFrame(animate);
+    }
 
-            if (existing) {
-                alert("同じ数字はすでにこのかごに入っています");
-                return;
-            }
+    function createFirework() {
+      const x = Math.random() * fireworksCanvas.width;
+      const y = Math.random() * fireworksCanvas.height / 2;
+      for (let i = 0; i < 20; i++) fireworks.push(new Particle(x, y));
+    }
 
-            const elem = document.querySelector(`.number[data-value="${data}"]`);
-            if (elem) {
-                basket.appendChild(elem);
-            }
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * 2 * Math.PI;
+        const speed = Math.random() * 5 + 2;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.alpha = 1;
+        this.color = `hsl(${Math.random() * 360}, 100%, 85%)`;
+      }
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= 0.02;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 3, 0, 2 * Math.PI);
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.alpha;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
 
-            checkAnswer();
-        }
+    function showHanamaruImage() {
+      hanamaruImg.style.display = 'block';
+      hanamaruImg.style.opacity = 1;
 
-        function checkAnswer() {
-            const basket1 = Array.from(document.getElementById("basket1").children).map(e => parseInt(e.dataset.value));
-            const basket2 = Array.from(document.getElementById("basket2").children).map(e => parseInt(e.dataset.value));
+      setTimeout(() => {
+        hanamaruImg.style.transition = 'opacity 0.5s ease';
+        hanamaruImg.style.opacity = 0;
 
-            const sortedBasket1 = [...basket1].sort((a, b) => a - b);
-            const sortedBasket2 = [...basket2].sort((a, b) => a - b);
-            const sortedAnswer1 = [...currentPattern[0]].sort((a, b) => a - b);
-            const sortedAnswer2 = [...currentPattern[1]].sort((a, b) => a - b);
-
-            const correct =
-                (JSON.stringify(sortedBasket1) === JSON.stringify(sortedAnswer1) &&
-                 JSON.stringify(sortedBasket2) === JSON.stringify(sortedAnswer2)) ||
-                (JSON.stringify(sortedBasket1) === JSON.stringify(sortedAnswer2) &&
-                 JSON.stringify(sortedBasket2) === JSON.stringify(sortedAnswer1));
-
-            if (correct) {
-                document.getElementById("message").style.display = "block";
-                const hanamaru = document.getElementById("hanamaru");
-                hanamaru.style.display = "block";
-
-                setTimeout(() => {
-                    document.getElementById("message").style.display = "none";
-                    hanamaru.style.display = "none";
-                    currentIndex++;
-                    loadNextQuestion();
-                }, 5000);
-            }
-        }
-
-        window.onload = loadNextQuestion;
-    </script>
+        setTimeout(() => {
+          hanamaruImg.style.display = 'none';
+          hanamaruImg.style.transition = '';
+        }, 500);
+      }, 3000); // ← 表示時間を3秒に変更
+    }
+  </script>
 </body>
 </html>
