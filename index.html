@@ -1,396 +1,122 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>かずわけゲーム</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: "Arial", sans-serif;
       text-align: center;
+      margin: 0;
+      padding: 0;
       background-color: #f0f8ff;
     }
-    #title, #game {
-      margin-top: 30px;
+
+    h1 {
+      margin-top: 20px;
+      font-size: 2em;
     }
-    #numberButtons {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      justify-content: center;
+
+    .container {
+      margin: 20px auto;
+      max-width: 90%;
+    }
+
+    .input-area {
+      margin: 20px 0;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      font-size: 1.2em;
+      width: 80%;
       max-width: 300px;
-      margin: 0 auto 20px;
     }
-    #numberButtons button {
-      font-size: 24px;
-      padding: 20px 0;
-      width: 100%;
-      border-radius: 8px;
-      background-color: #eee;
-      border: 2px solid #ccc;
-      cursor: pointer;
-      transition: background-color 0.3s;
+
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      margin-left: 10px;
     }
-    #numberButtons button:hover {
-      background-color: #ddd;
-    }
-    #numberButtons button.selected {
-      background-color: #3399ff;
-      color: white;
-      border-color: #3399ff;
-    }
-    .basket {
-      width: 280px;
-      height: 280px;
-      border: 3px solid #444;
-      display: inline-block;
-      vertical-align: top;
-      margin: 10px 30px;
-      padding: 15px;
-      border-radius: 16px;
-      background-color: #f9f9f9;
-    }
-    .basket h3 {
-      font-size: 20px;
-      margin: 0 0 10px 0;
-    }
-    .apple {
-      width: 40px;
-      height: 40px;
-      background-color: red;
-      border-radius: 50%;
-      display: inline-block;
-      margin: 5px;
-      touch-action: none;
-    }
-    #completeOverlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      font-size: 48px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    canvas#fireworksCanvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 999;
-      pointer-events: none;
-    }
-    /* 花丸画像用スタイル */
-    #hanamaruImg {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 150px;
-      z-index: 1100;
-      pointer-events: none;
-      user-select: none;
-    }
-    /* メッセージのフォントサイズ少し大きく */
+
     #message {
-      font-size: 18px;
-      height: 1.5em;
-      margin-top: 8px;
+      margin-top: 15px;
+      font-size: 1.2em;
       color: #333;
+    }
+
+    #hanamaru {
+      display: none;
+      margin: 20px auto;
+      width: 120px;
+      animation: pop 0.6s ease-out;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(1); }
+    }
+
+    /* スマホ対応 */
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.5em;
+      }
+
+      input[type="text"] {
+        font-size: 1em;
+      }
+
+      button {
+        font-size: 0.9em;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="title">
-    <h1>かずわけゲーム</h1>
-    <p>数字を選んでください（3～10）</p>
-    <div id="numberButtons"></div>
-    <button id="startBtn" disabled>ゲームスタート</button>
-  </div>
-
-  <div id="game" style="display: none;">
-    <h2 id="gameTitle"></h2>
-    <div id="appleContainer"></div>
-    <div>
-      <div id="basket1" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
-        <h3>ひだりのかご</h3>
-      </div>
-      <div id="basket2" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
-        <h3>みぎのかご</h3>
-      </div>
+  <h1>かずわけゲーム</h1>
+  <div class="container">
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="答えを入力">
+      <button onclick="checkAnswer()">送信</button>
     </div>
-    <p><button id="checkBtn">こたえあわせ</button></p>
-    <p id="message"></p>
+    <div id="message"></div>
+    <img id="hanamaru" src="images/hanamaru.png" alt="花丸">
   </div>
-
-  <div id="completeOverlay">ぜんもんせいかい！🎉</div>
-  <canvas id="fireworksCanvas"></canvas>
-
-  <!-- PNG花丸画像 -->
-  <img src="img/hanamaru.png" id="hanamaruImg" alt="花丸" />
 
   <script>
-    const numberButtonsDiv = document.getElementById('numberButtons');
-    const startBtn = document.getElementById('startBtn');
-    const titleDiv = document.getElementById('title');
-    const gameDiv = document.getElementById('game');
-    const gameTitle = document.getElementById('gameTitle');
-    const appleContainer = document.getElementById('appleContainer');
-    const basket1 = document.getElementById('basket1');
-    const basket2 = document.getElementById('basket2');
-    const checkBtn = document.getElementById('checkBtn');
-    const messageP = document.getElementById('message');
-    const completeOverlay = document.getElementById('completeOverlay');
-    const fireworksCanvas = document.getElementById('fireworksCanvas');
-    const ctx = fireworksCanvas.getContext('2d');
-    const hanamaruImg = document.getElementById('hanamaruImg');
+    const correctAnswer = "12";
+    let previousInput = "";
 
-    let selectedNumber = 0;
-    let patterns = [];
-    let currentPatternIndex = 0;
-    let animationId;
-    let fireworks = [];
+    function checkAnswer() {
+      const input = document.getElementById("userInput").value.trim();
+      const message = document.getElementById("message");
+      const hanamaru = document.getElementById("hanamaru");
 
-    window.addEventListener('resize', () => {
-      fireworksCanvas.width = window.innerWidth;
-      fireworksCanvas.height = window.innerHeight;
-    });
-    // 初期サイズ設定
-    fireworksCanvas.width = window.innerWidth;
-    fireworksCanvas.height = window.innerHeight;
-
-    // 数字ボタン生成
-    for (let i = 3; i <= 10; i++) {
-      const btn = document.createElement('button');
-      btn.textContent = i;
-      btn.dataset.num = i;
-      btn.addEventListener('click', () => {
-        selectedNumber = Number(btn.dataset.num);
-        document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        startBtn.disabled = false;
-      });
-      numberButtonsDiv.appendChild(btn);
-    }
-
-    startBtn.addEventListener('click', () => {
-      titleDiv.style.display = 'none';
-      gameDiv.style.display = 'block';
-      generatePatterns();
-      startGameRound();
-    });
-
-    // 正解したパターンの重複防止用
-    let clearedPairs = [];
-
-    function generatePatterns() {
-      patterns = [];
-      clearedPairs = [];
-      for (let i = 1; i <= selectedNumber / 2; i++) {
-        const j = selectedNumber - i;
-        if (!patterns.some(p => (p[0] === j && p[1] === i))) {
-          patterns.push([i, j]);
-        }
-      }
-    }
-
-    function startGameRound() {
-      if (patterns.length === 0) {
-        appleContainer.innerHTML = '';
-        basket1.innerHTML = '';
-        basket2.innerHTML = '';
-        gameTitle.textContent = '';
-        messageP.textContent = '';
-        completeOverlay.style.display = 'flex';
-        startFireworks();
-
-        setTimeout(() => {
-          completeOverlay.style.display = 'none';
-          stopFireworks();
-          resetGame();
-        }, 3000);
-        return;
-      }
-      currentPatternIndex = Math.floor(Math.random() * patterns.length);
-      gameTitle.textContent = `もんだい：${selectedNumber} はいくつといくつにわけられる？`;
-      appleContainer.innerHTML = '';
-      basket1.innerHTML = '<h3>ひだりのかご</h3>';
-      basket2.innerHTML = '<h3>みぎのかご</h3>';
-      for (let i = 0; i < selectedNumber; i++) {
-        const apple = document.createElement('div');
-        apple.className = 'apple';
-        apple.draggable = true;
-        apple.id = 'apple' + i;
-        apple.addEventListener('dragstart', drag);
-        apple.addEventListener('touchstart', touchStart, { passive: false });
-        appleContainer.appendChild(apple);
-      }
-    }
-
-    function allowDrop(ev) {
-      ev.preventDefault();
-    }
-
-    function drag(ev) {
-      ev.dataTransfer.setData('text', ev.target.id);
-    }
-
-    function drop(ev) {
-      ev.preventDefault();
-      let target = ev.target;
-      if (target.tagName === 'H3') target = target.parentNode;
-      const data = ev.dataTransfer.getData('text');
-      const apple = document.getElementById(data);
-      target.appendChild(apple);
-    }
-
-    checkBtn.addEventListener('click', () => {
-      const count1 = basket1.querySelectorAll('.apple').length;
-      const count2 = basket2.querySelectorAll('.apple').length;
-      const userPair = count1 < count2 ? [count1, count2] : [count2, count1];
-
-      // 重複正解チェック
-      const alreadyCleared = clearedPairs.some(p => p[0] === userPair[0] && p[1] === userPair[1]);
-      if (alreadyCleared) {
-        messageP.textContent = 'このくみあわせはもうせいかいしています。つぎのもんだいへすすみましょう！';
+      if (input === "") {
+        message.textContent = "答えを入力してください。";
+        hanamaru.style.display = "none";
         return;
       }
 
-      const idx = patterns.findIndex(p => p[0] === userPair[0] && p[1] === userPair[1]);
+      if (input === previousInput) {
+        message.textContent = "同じ答えが入力されています。";
+        hanamaru.style.display = "none";
+        return;
+      }
 
-      if (idx >= 0) {
-        messageP.textContent = `せいかい！「${userPair[0]} と ${userPair[1]}」のくみあわせをクリアしました。`;
+      previousInput = input;
 
-        // 花丸画像を表示
-        showHanamaruImage();
-
-        patterns.splice(idx, 1);
-        clearedPairs.push(userPair);
-
-        setTimeout(() => {
-          messageP.textContent = '';
-          startGameRound();
-        }, 1200);
+      if (input === correctAnswer) {
+        message.textContent = "";
+        hanamaru.style.display = "block";
+        hanamaru.style.animation = "pop 0.6s ease-out";
       } else {
-        messageP.textContent = 'ちがいます。もういちどかんがえてみてね。';
+        message.textContent = "ちがいます。もう一度！";
+        hanamaru.style.display = "none";
       }
-    });
-
-    function resetGame() {
-      gameDiv.style.display = 'none';
-      titleDiv.style.display = 'block';
-      startBtn.disabled = true;
-      selectedNumber = 0;
-      document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
-    }
-
-    // タッチ操作用
-    let touchedApple = null;
-
-    function touchStart(ev) {
-      ev.preventDefault();
-      touchedApple = ev.target;
-      document.addEventListener('touchmove', touchMove, { passive: false });
-      document.addEventListener('touchend', touchEnd);
-    }
-
-    function touchMove(ev) {
-      if (!touchedApple) return;
-      const touch = ev.touches[0];
-      touchedApple.style.position = 'absolute';
-      touchedApple.style.left = (touch.clientX - 20) + 'px';
-      touchedApple.style.top = (touch.clientY - 20) + 'px';
-      touchedApple.style.zIndex = 1000;
-    }
-
-    function touchEnd(ev) {
-      if (!touchedApple) return;
-      const baskets = [basket1, basket2];
-      const touch = ev.changedTouches[0];
-      baskets.forEach(basket => {
-        const rect = basket.getBoundingClientRect();
-        if (touch.clientX > rect.left && touch.clientX < rect.right && touch.clientY > rect.top && touch.clientY < rect.bottom) {
-          basket.appendChild(touchedApple);
-        }
-      });
-      touchedApple.style.position = 'static';
-      touchedApple.style.left = '';
-      touchedApple.style.top = '';
-      touchedApple.style.zIndex = '';
-      touchedApple = null;
-      document.removeEventListener('touchmove', touchMove);
-      document.removeEventListener('touchend', touchEnd);
-    }
-
-    // 花火演出
-    function startFireworks() {
-      fireworksCanvas.width = window.innerWidth;
-      fireworksCanvas.height = window.innerHeight;
-      animationId = requestAnimationFrame(animate);
-    }
-
-    function stopFireworks() {
-      cancelAnimationFrame(animationId);
-      ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
-      fireworks = [];
-    }
-
-    function animate() {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-      ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
-      if (Math.random() < 0.05) createFirework();
-      fireworks.forEach(f => f.update());
-      fireworks = fireworks.filter(f => f.alpha > 0);
-      animationId = requestAnimationFrame(animate);
-    }
-
-    function createFirework() {
-      const x = Math.random() * fireworksCanvas.width;
-      const y = Math.random() * fireworksCanvas.height / 2;
-      for (let i = 0; i < 20; i++) fireworks.push(new Particle(x, y));
-    }
-
-    class Particle {
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        const angle = Math.random() * 2 * Math.PI;
-        const speed = Math.random() * 5 + 2;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.alpha = 1;
-        this.color = `hsl(${Math.random() * 360}, 100%, 85%)`;
-      }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.alpha -= 0.02;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 3, 0, 2 * Math.PI);
-        ctx.fillStyle = this.color;
-        ctx.globalAlpha = this.alpha;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-    }
-
-    // 花丸画像表示
-    function showHanamaruImage() {
-      hanamaruImg.style.display = 'block';
-      hanamaruImg.style.opacity = 1;
-
-      setTimeout(() => {
-        hanamaruImg.style.transition = 'opacity 0.5s ease';
-        hanamaruImg.style.opacity = 0;
-
-        setTimeout(() => {
-          hanamaruImg.style.display = 'none';
-          hanamaruImg.style.transition = '';
-        }, 500);
-      }, 1500);
     }
   </script>
 </body>
