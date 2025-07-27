@@ -244,7 +244,7 @@
       const userPair = count1 < count2 ? [count1, count2] : [count2, count1];
       const alreadyCleared = clearedPairs.some(p => p[0] === userPair[0] && p[1] === userPair[1]);
       if (alreadyCleared) {
-        messageP.textContent = 'このくみあわせはもうせいかいしています。つぎのもんだいへすすみましょう！';
+        messageP.textContent = 'このくみあわせはもうせいかいしています。ほかのくみあわせをみつけよう！';
         return;
       }
 
@@ -362,7 +362,7 @@ function showHanamaruImage() {
     hanamaruImg.style.display = 'none';
     messageP.textContent = '';
     startGameRound(); // ← 花丸が消えた後に次の問題
-  }, 3000); // 表示時間：3秒
+  }, 2500); // 表示時間：3秒
 }
 
 
