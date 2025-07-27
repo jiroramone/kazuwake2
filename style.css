@@ -1,3 +1,91 @@
 body {
-  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+  font-family: "Arial", sans-serif;
+  background-color: #f7f7f7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+.container {
+  background-color: white;
+  padding: 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  max-width: 90vw;
+  width: 400px;
+  text-align: center;
+}
+
+h1 {
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+}
+
+#questionArea {
+  font-size: 1.4rem;
+  margin-bottom: 15px;
+}
+
+#answerArea input {
+  font-size: 1.2rem;
+  padding: 10px;
+  width: 60%;
+  margin-right: 10px;
+}
+
+#answerArea button {
+  font-size: 1.2rem;
+  padding: 10px 15px;
+}
+
+#messageArea {
+  margin-top: 20px;
+  font-size: 1.2rem;
+}
+
+#hanamaru {
+  width: 120px;
+  margin-top: 20px;
+  display: none;
+  animation: pop 0.5s ease;
+}
+
+@keyframes pop {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+}
+
+/* モバイル向け調整 */
+@media (max-width: 480px) {
+  .container {
+    width: 95%;
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  #answerArea input {
+    width: 55%;
+    font-size: 1rem;
+  }
+
+  #answerArea button {
+    font-size: 1rem;
+    padding: 8px 12px;
+  }
+
+  #hanamaru {
+    width: 150px;
+  }
 }
