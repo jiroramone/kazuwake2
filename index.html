@@ -88,7 +88,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 450px; /* ← 大きさを変更 */
+      width: 200px; /* ← 大きさを変更 */
       z-index: 1100;
       pointer-events: none;
       user-select: none;
@@ -362,7 +362,7 @@
 
     function showHanamaruImage() {
       hanamaruImg.style.display = 'block';
-    
+      hanamaruImg.style.opacity = 1;
 
       setTimeout(() => {
         hanamaruImg.style.transition = 'opacity 0.5s ease';
@@ -370,7 +370,9 @@
 
         setTimeout(() => {
           hanamaruImg.style.display = 'none';
-      }, 2500); // ← 表示時間を3秒に変更
+          hanamaruImg.style.transition = '';
+        }, 500);
+      }, 3000); // ← 表示時間を3秒に変更
     }
   </script>
 </body>
