@@ -255,10 +255,6 @@
         showHanamaruImage();
         patterns.splice(idx, 1);
         clearedPairs.push(userPair);
-        setTimeout(() => {
-          messageP.textContent = '';
-          startGameRound();
-        }, 1200);
       } else {
         messageP.textContent = 'ちがいます。もういちどかんがえてみてね。';
       }
@@ -364,7 +360,9 @@ function showHanamaruImage() {
   hanamaruImg.style.display = 'block';
   setTimeout(() => {
     hanamaruImg.style.display = 'none';
-  }, 3000); // ← ★表示時間を3秒に設定
+    messageP.textContent = '';
+    startGameRound(); // ← 花丸が消えた後に次の問題
+  }, 3000); // 表示時間：3秒
 }
 
 
