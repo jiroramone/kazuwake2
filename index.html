@@ -129,8 +129,9 @@
             height: 320px;
             border: 4px dashed #607d8b; /* Dashed border for a softer look */
             display: flex; /* Use flexbox for content alignment */
-            flex-direction: column;
-            align-items: center;
+            flex-wrap: wrap; /* Allow apples to wrap to the next line */
+            justify-content: center; /* Center apples horizontally */
+            align-content: flex-start; /* Align rows to the top */
             padding: 20px;
             border-radius: 20px; /* More rounded corners */
             background-color: #fce4ec; /* Light pink background */
@@ -143,6 +144,9 @@
             font-size: 22px;
             margin: 0 0 15px 0;
             color: #ad1457; /* Darker pink for basket titles */
+            width: 100%; /* Ensure the title takes full width */
+            text-align: center; /* Center the title */
+            flex-shrink: 0; /* Prevent title from shrinking */
         }
         /* Styles for apples inside baskets */
         .basket .apple {
