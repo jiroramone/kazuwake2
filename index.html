@@ -1,371 +1,765 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>かずわけゲーム</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      background-color: #f0f8ff;
-    }
-    #title, #game {
-      margin-top: 30px;
-    }
-    #numberButtons {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      justify-content: center;
-      max-width: 300px;
-      margin: 0 auto 20px;
-    }
-    #numberButtons button {
-      font-size: 24px;
-      padding: 20px 0;
-      width: 100%;
-      border-radius: 8px;
-      background-color: #eee;
-      border: 2px solid #ccc;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    #numberButtons button:hover {
-      background-color: #ddd;
-    }
-    #numberButtons button.selected {
-      background-color: #3399ff;
-      color: white;
-      border-color: #3399ff;
-    }
-    .basket {
-      width: 280px;
-      height: 280px;
-      border: 3px solid #444;
-      display: inline-block;
-      vertical-align: top;
-      margin: 10px 30px;
-      padding: 15px;
-      border-radius: 16px;
-      background-color: #f9f9f9;
-    }
-    .basket h3 {
-      font-size: 20px;
-      margin: 0 0 10px 0;
-    }
-    .apple {
-      width: 40px;
-      height: 40px;
-      background-color: red;
-      border-radius: 50%;
-      display: inline-block;
-      margin: 5px;
-      touch-action: none;
-    }
-    #completeOverlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      font-size: 48px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-    canvas#fireworksCanvas {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 999;
-      pointer-events: none;
-    }
-    #hanamaruImg {
-      display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 200px; /* ← 大きさを変更 */
-      z-index: 1100;
-      pointer-events: none;
-      user-select: none;
-    }
-    #message {
-      font-size: 18px;
-      height: 1.5em;
-      margin-top: 8px;
-      color: #333;
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>かずわけゲーム</title>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tone.js library for sound generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <style>
+        /* Base styles for the body and overall layout */
+        body {
+            font-family: 'Inter', sans-serif; /* Use Inter font */
+            text-align: center;
+            background-color: #e0f7fa; /* Lighter background for a fresh feel */
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh; /* Ensure body takes full viewport height */
+            box-sizing: border-box; /* Include padding in element's total width and height */
+        }
+        /* Main title and game sections */
+        #title, #game {
+            margin-top: 30px;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 20px; /* More rounded corners */
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            max-width: 900px; /* Limit max width for larger screens */
+            width: 100%; /* Full width on smaller screens */
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3 {
+            color: #263238; /* Darker text for better readability */
+        }
+
+        p {
+            color: #455a64;
+        }
+
+        /* Number selection buttons container */
+        #numberButtons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsive grid for buttons */
+            gap: 15px; /* Increased gap */
+            justify-content: center;
+            max-width: 600px; /* Max width for button grid */
+            margin: 20px auto 30px;
+        }
+        /* Individual number buttons */
+        #numberButtons button {
+            font-size: 28px; /* Larger font size */
+            padding: 25px 0; /* More padding */
+            width: 100%;
+            border-radius: 12px; /* More rounded corners */
+            background-color: #e3f2fd; /* Light blue background */
+            border: 2px solid #90caf9; /* Matching border */
+            color: #1565c0; /* Darker blue text */
+            cursor: pointer;
+            transition: all 0.3s ease; /* Smooth transitions for all properties */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+            font-weight: bold;
+        }
+        #numberButtons button:hover {
+            background-color: #bbdefb; /* Lighter blue on hover */
+            transform: translateY(-3px); /* Slight lift effect */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        #numberButtons button.selected {
+            background-color: #2196f3; /* Vibrant blue when selected */
+            color: white;
+            border-color: #1976d2;
+            box-shadow: 0 6px 12px rgba(33, 150, 243, 0.4);
+            transform: scale(1.05); /* Slightly larger when selected */
+        }
+
+        /* Start game button */
+        #startBtn, #checkBtn {
+            font-size: 24px;
+            padding: 15px 40px;
+            border-radius: 10px;
+            border: none;
+            background: linear-gradient(45deg, #4caf50, #81c784); /* Green gradient */
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #startBtn:hover, #checkBtn:hover {
+            background: linear-gradient(45deg, #66bb6a, #a5d6a7);
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.25);
+        }
+        #startBtn:disabled {
+            background: #bdbdbd; /* Grey when disabled */
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* Apple container for initial apples */
+        #appleContainer {
+            display: flex;
+            flex-wrap: wrap; /* Allow apples to wrap to next line */
+            justify-content: center;
+            gap: 10px; /* Space between apples */
+            margin: 30px 0;
+            min-height: 50px; /* Ensure it has some height even when empty */
+        }
+
+        /* Basket container for the two baskets */
+        .basket-container {
+            display: flex;
+            flex-wrap: wrap; /* Allow baskets to wrap */
+            justify-content: center;
+            gap: 30px; /* Space between baskets */
+            margin-bottom: 30px;
+        }
+
+        /* Individual basket styles */
+        .basket {
+            width: 320px; /* Slightly larger baskets */
+            height: 320px;
+            border: 4px dashed #607d8b; /* Dashed border for a softer look */
+            display: flex; /* Use flexbox for content alignment */
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border-radius: 20px; /* More rounded corners */
+            background-color: #fce4ec; /* Light pink background */
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.05); /* Inner shadow */
+            transition: background-color 0.3s ease;
+            box-sizing: border-box; /* Include padding in total size */
+            overflow: auto; /* Allow scrolling if too many apples */
+        }
+        .basket h3 {
+            font-size: 22px;
+            margin: 0 0 15px 0;
+            color: #ad1457; /* Darker pink for basket titles */
+        }
+        /* Styles for apples inside baskets */
+        .basket .apple {
+            background-color: #ef5350; /* Brighter red for apples */
+            border: 2px solid #c62828; /* Darker red border */
+        }
+
+        /* Apple styles */
+        .apple {
+            width: 50px; /* Larger apples */
+            height: 50px;
+            background-color: #f44336; /* Default apple color */
+            border-radius: 50%; /* Perfect circle */
+            display: inline-block;
+            margin: 8px; /* More margin */
+            cursor: grab; /* Indicate draggable */
+            transition: transform 0.1s ease;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Apple shadow */
+            touch-action: none; /* Prevent default touch actions like scrolling */
+        }
+        .apple:active {
+            cursor: grabbing;
+        }
+        .apple.dragging {
+            opacity: 0.7; /* Make apple semi-transparent when dragging */
+        }
+
+        /* Message display area */
+        #message {
+            font-size: 20px;
+            height: 2em; /* Enough height for two lines of text */
+            margin-top: 15px;
+            color: #3f51b5; /* Blue for messages */
+            font-weight: bold;
+        }
+
+        /* Complete overlay for game completion */
+        #completeOverlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.1); /* Very light transparent black */
+            color: white;
+            font-size: 60px; /* Larger font */
+            display: none; /* Hidden by default */
+            flex-direction: column; /* Stack content vertically */
+            align-items: center;
+            justify-content: center;
+            z-index: 1002; /* Set a higher z-index to be on top of fireworksCanvas */
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.5); /* Glowing text effect */
+        }
+        /* Fireworks canvas */
+        canvas#fireworksCanvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1001; /* Set a higher z-index to be on top of everything */
+            pointer-events: none; /* Allow clicks to pass through */
+            /* background-color will be set dynamically by JavaScript */
+        }
+        /* Hanamaru (flower circle) image */
+        #hanamaruImg { /* Changed ID to reflect image */
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px; /* Larger size */
+            height: 250px; /* Maintain aspect ratio */
+            z-index: 1100;
+            pointer-events: none;
+            user-select: none;
+            filter: drop-shadow(0 0 10px rgba(255, 255, 0, 0.8)); /* Yellow glow */
+            object-fit: contain; /* Ensure the entire image is visible within its bounds */
+        }
+
+        /* Media queries for responsiveness */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            #title, #game {
+                padding: 20px;
+                margin-top: 15px;
+            }
+            h1 {
+                font-size: 26px; /* Adjusted for better readability */
+            }
+            p {
+                font-size: 16px; /* Adjusted for better readability */
+            }
+            h2 {
+                font-size: 22px; /* Adjusted for better readability */
+            }
+            #numberButtons {
+                gap: 10px;
+                margin: 15px auto 20px;
+            }
+            #numberButtons button {
+                font-size: 20px; /* Adjusted button font size */
+                padding: 15px 0;
+                border-radius: 10px;
+            }
+            #startBtn, #checkBtn {
+                font-size: 18px; /* Adjusted button font size */
+                padding: 10px 25px;
+                border-radius: 8px;
+            }
+            .basket-container {
+                flex-direction: column; /* Stack baskets vertically on small screens */
+                align-items: center;
+                gap: 20px;
+            }
+            .basket {
+                width: 90%; /* Baskets take more width */
+                height: 220px; /* Slightly smaller height */
+                padding: 15px;
+                border-radius: 15px;
+            }
+            .basket h3 {
+                font-size: 20px; /* Adjusted basket title font size */
+            }
+            #appleContainer {
+                gap: 8px;
+                margin: 20px 0;
+            }
+            .apple {
+                width: 40px; /* Slightly smaller apples */
+                height: 40px;
+                margin: 5px;
+            }
+            #message {
+                font-size: 18px; /* Adjusted message font size */
+                height: 2.5em; /* Ensure enough height for messages */
+            }
+            #completeOverlay {
+                font-size: 36px; /* Adjusted overlay font size */
+            }
+            #hanamaruImg { /* Updated ID */
+                width: 160px;
+                height: 160px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 5px;
+            }
+            #title, #game {
+                padding: 15px;
+                margin-top: 10px;
+            }
+            h1 {
+                font-size: 22px; /* Further adjustment for very small screens */
+            }
+            p {
+                font-size: 14px;
+            }
+            h2 {
+                font-size: 18px;
+            }
+            #numberButtons {
+                grid-template-columns: repeat(auto-fit, minmax(50px, 1fr)); /* Smaller min-width for buttons */
+                gap: 8px;
+                margin: 10px auto 15px;
+            }
+            #numberButtons button {
+                font-size: 16px;
+                padding: 12px 0;
+            }
+            #startBtn, #checkBtn {
+                font-size: 16px;
+                padding: 8px 15px;
+            }
+            .basket {
+                width: 95%; /* Even more width on smallest screens */
+                height: 180px; /* Smaller height */
+                padding: 10px;
+                border-radius: 12px;
+            }
+            .basket h3 {
+                font-size: 18px;
+            }
+            #appleContainer {
+                gap: 6px;
+                margin: 15px 0;
+            }
+            .apple {
+                width: 35px; /* Smallest apple size */
+                height: 35px;
+                margin: 4px;
+            }
+            #message {
+                font-size: 16px;
+                height: 3em; /* More height for messages on smallest screens */
+            }
+            #completeOverlay {
+                font-size: 28px;
+            }
+            #hanamaruImg { /* Updated ID */
+                width: 120px;
+                height: 120px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="title">
-    <h1>かずわけゲーム</h1>
-    <p>数字を選んでください（3～10）</p>
-    <div id="numberButtons"></div>
-    <button id="startBtn" disabled>ゲームスタート</button>
-  </div>
-
-  <div id="game" style="display: none;">
-    <h2 id="gameTitle"></h2>
-    <div id="appleContainer"></div>
-    <div>
-      <div id="basket1" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
-        <h3>ひだりのかご</h3>
-      </div>
-      <div id="basket2" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
-        <h3>みぎのかご</h3>
-      </div>
+    <div id="title">
+        <h1>かずわけゲーム</h1>
+        <p>数字を選んでください（3～10）</p>
+        <div id="numberButtons"></div>
+        <button id="startBtn" disabled>ゲームスタート</button>
     </div>
-    <p><button id="checkBtn">こたえあわせ</button></p>
-    <p id="message"></p>
-  </div>
 
-  <div id="completeOverlay">ぜんもんせいかい！🎉</div>
-  <canvas id="fireworksCanvas"></canvas>
-  <img src="img/hanamaru.png" id="hanamaruImg" alt="花丸" />
+    <div id="game" style="display: none;">
+        <h2 id="gameTitle"></h2>
+        <div id="appleContainer"></div>
+        <div class="basket-container"> <!-- New container for baskets -->
+            <div id="basket1" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <h3>ひだりのかご</h3>
+            </div>
+            <div id="basket2" class="basket" ondrop="drop(event)" ondragover="allowDrop(event)">
+                <h3>みぎのかご</h3>
+            </div>
+        </div>
+        <p><button id="checkBtn">こたえあわせ</button></p>
+        <p id="message"></p>
+    </div>
 
-  <script>
-    const numberButtonsDiv = document.getElementById('numberButtons');
-    const startBtn = document.getElementById('startBtn');
-    const titleDiv = document.getElementById('title');
-    const gameDiv = document.getElementById('game');
-    const gameTitle = document.getElementById('gameTitle');
-    const appleContainer = document.getElementById('appleContainer');
-    const basket1 = document.getElementById('basket1');
-    const basket2 = document.getElementById('basket2');
-    const checkBtn = document.getElementById('checkBtn');
-    const messageP = document.getElementById('message');
-    const completeOverlay = document.getElementById('completeOverlay');
-    const fireworksCanvas = document.getElementById('fireworksCanvas');
-    const ctx = fireworksCanvas.getContext('2d');
-    const hanamaruImg = document.getElementById('hanamaruImg');
+    <div id="completeOverlay">ぜんもんせいかい！🎉</div>
+    <canvas id="fireworksCanvas"></canvas>
+    <!-- Using hanamaru.png from the same folder -->
+    <img src="hanamaru.png" id="hanamaruImg" alt="花丸" />
 
-    let selectedNumber = 0;
-    let patterns = [];
-    let currentPatternIndex = 0;
-    let animationId;
-    let fireworks = [];
-    let clearedPairs = [];
+    <script>
+        // Get references to DOM elements
+        const numberButtonsDiv = document.getElementById('numberButtons');
+        const startBtn = document.getElementById('startBtn');
+        const titleDiv = document.getElementById('title');
+        const gameDiv = document.getElementById('game');
+        const gameTitle = document.getElementById('gameTitle');
+        const appleContainer = document.getElementById('appleContainer');
+        const basket1 = document.getElementById('basket1');
+        const basket2 = document.getElementById('basket2');
+        const checkBtn = document.getElementById('checkBtn');
+        const messageP = document.getElementById('message');
+        const completeOverlay = document.getElementById('completeOverlay');
+        const fireworksCanvas = document.getElementById('fireworksCanvas');
+        const ctx = fireworksCanvas.getContext('2d'); // 2D rendering context for canvas
+        const hanamaruImg = document.getElementById('hanamaruImg'); // Reference to the image element
 
-    window.addEventListener('resize', () => {
-      fireworksCanvas.width = window.innerWidth;
-      fireworksCanvas.height = window.innerHeight;
-    });
-    fireworksCanvas.width = window.innerWidth;
-    fireworksCanvas.height = window.innerHeight;
+        // Game state variables
+        let selectedNumber = 0; // The number chosen by the user (e.g., 5, 10)
+        let patterns = []; // Array to store all possible pairs for the selected number (e.g., for 5: [[1,4], [2,3]])
+        let currentPatternIndex = 0; // Not directly used for selecting a pattern, but `patterns.splice` removes it.
+        let animationId; // ID for the fireworks animation frame
+        let fireworks = []; // Array to hold active firework particles
+        let clearedPairs = []; // Array to store pairs that have already been correctly identified by the user
 
-    for (let i = 3; i <= 10; i++) {
-      const btn = document.createElement('button');
-      btn.textContent = i;
-      btn.dataset.num = i;
-      btn.addEventListener('click', () => {
-        selectedNumber = Number(btn.dataset.num);
-        document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        startBtn.disabled = false;
-      });
-      numberButtonsDiv.appendChild(btn);
-    }
+        // Initialize Tone.js synthesizer for correct answer sound
+        // Using MembraneSynth for a percussive "ping-pong" like sound
+        const correctSound = new Tone.MembraneSynth({
+            pitchDecay: 0.05, // How quickly the pitch falls
+            octaves: 8,      // How many octaves the pitch falls
+            envelope: {
+                attack: 0.001,
+                decay: 0.4,
+                sustain: 0.01,
+                release: 0.8,
+                attackCurve: "exponential"
+            }
+        }).toDestination(); // Connect the synth to the speakers
 
-    startBtn.addEventListener('click', () => {
-      titleDiv.style.display = 'none';
-      gameDiv.style.display = 'block';
-      generatePatterns();
-      startGameRound();
-    });
+        // Set canvas dimensions to match window size and update on resize
+        window.addEventListener('resize', () => {
+            fireworksCanvas.width = window.innerWidth;
+            fireworksCanvas.height = window.innerHeight;
+        });
+        fireworksCanvas.width = window.innerWidth;
+        fireworksCanvas.height = window.innerHeight;
 
-    function generatePatterns() {
-      patterns = [];
-      clearedPairs = [];
-      for (let i = 1; i <= selectedNumber / 2; i++) {
-        const j = selectedNumber - i;
-        if (!patterns.some(p => (p[0] === j && p[1] === i))) {
-          patterns.push([i, j]);
+        // Populate the number selection buttons (3 to 10)
+        for (let i = 3; i <= 10; i++) {
+            const btn = document.createElement('button');
+            btn.textContent = i; // Display the number
+            btn.dataset.num = i; // Store the number as a data attribute
+            btn.addEventListener('click', () => {
+                selectedNumber = Number(btn.dataset.num); // Update selectedNumber
+                // Remove 'selected' class from all buttons and add to the clicked one
+                document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                startBtn.disabled = false; // Enable the start button once a number is selected
+            });
+            numberButtonsDiv.appendChild(btn); // Add button to the container
         }
-      }
-    }
 
-    function startGameRound() {
-      if (patterns.length === 0) {
-        appleContainer.innerHTML = '';
-        basket1.innerHTML = '';
-        basket2.innerHTML = '';
-        gameTitle.textContent = '';
-        messageP.textContent = '';
-        completeOverlay.style.display = 'flex';
-        startFireworks();
-        setTimeout(() => {
-          completeOverlay.style.display = 'none';
-          stopFireworks();
-          resetGame();
-        }, 3000);
-        return;
-      }
-      currentPatternIndex = Math.floor(Math.random() * patterns.length);
-      gameTitle.textContent = `もんだい：${selectedNumber} はいくつといくつにわけられる？`;
-      appleContainer.innerHTML = '';
-      basket1.innerHTML = '<h3>ひだりのかご</h3>';
-      basket2.innerHTML = '<h3>みぎのかご</h3>';
-      for (let i = 0; i < selectedNumber; i++) {
-        const apple = document.createElement('div');
-        apple.className = 'apple';
-        apple.draggable = true;
-        apple.id = 'apple' + i;
-        apple.addEventListener('dragstart', drag);
-        apple.addEventListener('touchstart', touchStart, { passive: false });
-        appleContainer.appendChild(apple);
-      }
-    }
+        // Event listener for the "ゲームスタート" (Game Start) button
+        startBtn.addEventListener('click', () => {
+            // Start Tone.js context on user interaction to avoid browser autoplay policy issues
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            titleDiv.style.display = 'none'; // Hide the title screen
+            gameDiv.style.display = 'block'; // Show the game screen
+            generatePatterns(); // Generate all possible splitting patterns for the selected number
+            startGameRound(); // Start the first round of the game
+        });
 
-    function allowDrop(ev) {
-      ev.preventDefault();
-    }
-
-    function drag(ev) {
-      ev.dataTransfer.setData('text', ev.target.id);
-    }
-
-    function drop(ev) {
-      ev.preventDefault();
-      let target = ev.target;
-      if (target.tagName === 'H3') target = target.parentNode;
-      const data = ev.dataTransfer.getData('text');
-      const apple = document.getElementById(data);
-      target.appendChild(apple);
-    }
-
-    checkBtn.addEventListener('click', () => {
-      const count1 = basket1.querySelectorAll('.apple').length;
-      const count2 = basket2.querySelectorAll('.apple').length;
-      const userPair = count1 < count2 ? [count1, count2] : [count2, count1];
-      const alreadyCleared = clearedPairs.some(p => p[0] === userPair[0] && p[1] === userPair[1]);
-      if (alreadyCleared) {
-        messageP.textContent = 'このくみあわせはもうせいかいしています。ほかのくみあわせをみつけよう！';
-        return;
-      }
-
-      const idx = patterns.findIndex(p => p[0] === userPair[0] && p[1] === userPair[1]);
-
-      if (idx >= 0) {
-        messageP.textContent = `せいかい！「${userPair[0]} と ${userPair[1]}」のくみあわせをクリアしました。`;
-        showHanamaruImage();
-        patterns.splice(idx, 1);
-        clearedPairs.push(userPair);
-      } else {
-        messageP.textContent = 'ちがいます。もういちどかんがえてみてね。';
-      }
-    });
-
-    function resetGame() {
-      gameDiv.style.display = 'none';
-      titleDiv.style.display = 'block';
-      startBtn.disabled = true;
-      selectedNumber = 0;
-      document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
-    }
-
-    let touchedApple = null;
-
-    function touchStart(ev) {
-      ev.preventDefault();
-      touchedApple = ev.target;
-      document.addEventListener('touchmove', touchMove, { passive: false });
-      document.addEventListener('touchend', touchEnd);
-    }
-
-    function touchMove(ev) {
-      if (!touchedApple) return;
-      const touch = ev.touches[0];
-      touchedApple.style.position = 'absolute';
-      touchedApple.style.left = (touch.clientX - 20) + 'px';
-      touchedApple.style.top = (touch.clientY - 20) + 'px';
-      touchedApple.style.zIndex = 1000;
-    }
-
-    function touchEnd(ev) {
-      if (!touchedApple) return;
-      const baskets = [basket1, basket2];
-      const touch = ev.changedTouches[0];
-      baskets.forEach(basket => {
-        const rect = basket.getBoundingClientRect();
-        if (touch.clientX > rect.left && touch.clientX < rect.right && touch.clientY > rect.top && touch.clientY < rect.bottom) {
-          basket.appendChild(touchedApple);
+        /**
+         * Generates all unique pairs of numbers that sum up to the selectedNumber.
+         * For example, if selectedNumber is 5, patterns will be [[1,4], [2,3]].
+         * It ensures pairs are unique and ordered (e.g., [1,4] but not [4,1]).
+         */
+        function generatePatterns() {
+            patterns = []; // Reset patterns for a new game
+            clearedPairs = []; // Reset cleared pairs
+            for (let i = 1; i <= Math.floor(selectedNumber / 2); i++) {
+                const j = selectedNumber - i;
+                // Add the pair [i, j] if it's not already present (handles cases like 6 -> [3,3])
+                if (!patterns.some(p => (p[0] === j && p[1] === i))) {
+                    patterns.push([i, j]);
+                }
+            }
+            // Shuffle the patterns to present them in a random order
+            patterns.sort(() => Math.random() - 0.5);
         }
-      });
-      touchedApple.style.position = 'static';
-      touchedApple.style.left = '';
-      touchedApple.style.top = '';
-      touchedApple.style.zIndex = '';
-      touchedApple = null;
-      document.removeEventListener('touchmove', touchMove);
-      document.removeEventListener('touchend', touchEnd);
-    }
 
-    function startFireworks() {
-      fireworksCanvas.width = window.innerWidth;
-      fireworksCanvas.height = window.innerHeight;
-      animationId = requestAnimationFrame(animate);
-    }
+        /**
+         * Starts a new round of the game.
+         * If all patterns are cleared, it shows the completion overlay and fireworks.
+         */
+        function startGameRound() {
+            // Hide the hanamaru image immediately when a new round starts
+            hanamaruImg.style.display = 'none';
 
-    function stopFireworks() {
-      cancelAnimationFrame(animationId);
-      ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
-      fireworks = [];
-    }
+            // Check if all patterns have been cleared
+            if (patterns.length === 0) {
+                // Clear game elements
+                appleContainer.innerHTML = '';
+                basket1.innerHTML = '<h3>ひだりのかご</h3>';
+                basket2.innerHTML = '<h3>みぎのかご</h3>';
+                gameTitle.textContent = '';
+                messageP.textContent = '';
 
-    function animate() {
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-      ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
-      if (Math.random() < 0.05) createFirework();
-      fireworks.forEach(f => f.update());
-      fireworks = fireworks.filter(f => f.alpha > 0);
-      animationId = requestAnimationFrame(animate);
-    }
+                completeOverlay.style.display = 'flex'; // Show the completion overlay
+                startFireworks(); // Start the fireworks animation
+                // Hide overlay and reset game after a delay
+                setTimeout(() => {
+                    completeOverlay.style.display = 'none';
+                    stopFireworks();
+                    resetGame();
+                }, 3000); // Display for 3 seconds
+                return; // Exit function
+            }
 
-    function createFirework() {
-      const x = Math.random() * fireworksCanvas.width;
-      const y = Math.random() * fireworksCanvas.height / 2;
-      for (let i = 0; i < 20; i++) fireworks.push(new Particle(x, y));
-    }
+            // Display the current problem
+            gameTitle.textContent = `もんだい：${selectedNumber} はいくつといくつにわけられる？`;
 
-    class Particle {
-      constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        const angle = Math.random() * 2 * Math.PI;
-        const speed = Math.random() * 5 + 2;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-        this.alpha = 1;
-        this.color = `hsl(${Math.random() * 360}, 100%, 85%)`;
-      }
-      update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.alpha -= 0.02;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, 3, 0, 2 * Math.PI);
-        ctx.fillStyle = this.color;
-        ctx.globalAlpha = this.alpha;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      }
-    }
+            // Clear existing apples and reset baskets
+            appleContainer.innerHTML = '';
+            basket1.innerHTML = '<h3>ひだりのかご</h3>';
+            basket2.innerHTML = '<h3>みぎのかご</h3>';
+            messageP.textContent = ''; // Clear previous message
 
-function showHanamaruImage() {
-  hanamaruImg.style.display = 'block';
-  setTimeout(() => {
-    hanamaruImg.style.display = 'none';
-    messageP.textContent = '';
-    startGameRound(); // ← 花丸が消えた後に次の問題
-  }, 1500); // 表示時間：3秒
-}
+            // Create and add apples to the apple container
+            for (let i = 0; i < selectedNumber; i++) {
+                const apple = document.createElement('div');
+                apple.className = 'apple'; // Apply apple styling
+                apple.draggable = true; // Make apples draggable for mouse
+                apple.id = 'apple' + i; // Assign a unique ID
+                apple.addEventListener('dragstart', drag); // Mouse drag start event
+                apple.addEventListener('touchstart', touchStart, { passive: false }); // Touch start event
+                appleContainer.appendChild(apple);
+            }
+        }
 
+        /**
+         * Allows dropping elements onto the target.
+         * @param {Event} ev - The dragover event.
+         */
+        function allowDrop(ev) {
+            ev.preventDefault(); // Prevent default to allow drop
+        }
 
-  </script>
+        /**
+         * Sets the data to be transferred during a drag operation.
+         * @param {Event} ev - The dragstart event.
+         */
+        function drag(ev) {
+            ev.dataTransfer.setData('text', ev.target.id); // Store the ID of the dragged apple
+            ev.target.classList.add('dragging'); // Add dragging class for visual feedback
+        }
+
+        /**
+         * Handles the drop event, moving the dragged apple to the target basket.
+         * @param {Event} ev - The drop event.
+         */
+        function drop(ev) {
+            ev.preventDefault();
+            let target = ev.target;
+            // If the target is the H3 element inside the basket, get its parent (the basket itself)
+            if (target.tagName === 'H3') {
+                target = target.parentNode;
+            }
+            const data = ev.dataTransfer.getData('text'); // Get the ID of the dragged apple
+            const apple = document.getElementById(data);
+            if (apple) {
+                target.appendChild(apple); // Append the apple to the basket
+                apple.classList.remove('dragging'); // Remove dragging class
+            }
+        }
+
+        // Event listener for the "こたえあわせ" (Check Answer) button
+        checkBtn.addEventListener('click', () => {
+            // Count apples in each basket
+            const count1 = basket1.querySelectorAll('.apple').length;
+            const count2 = basket2.querySelectorAll('.apple').length;
+
+            // Create a sorted pair for comparison (e.g., [1,4] instead of [4,1])
+            const userPair = count1 < count2 ? [count1, count2] : [count2, count1];
+
+            // Check if this combination has already been cleared
+            const alreadyCleared = clearedPairs.some(p => p[0] === userPair[0] && p[1] === userPair[1]);
+            if (alreadyCleared) {
+                messageP.textContent = 'このくみあわせはもうせいかいしています。つぎのもんだいへすすみましょう！';
+                return; // Exit if already cleared
+            }
+
+            // Find the index of the user's pair in the remaining patterns
+            const idx = patterns.findIndex(p => p[0] === userPair[0] && p[1] === userPair[1]);
+
+            if (idx >= 0) {
+                // Correct answer
+                messageP.textContent = `せいかい！「${userPair[0]} と ${userPair[1]}」のくみあわせをクリアしました。`;
+                // Play a "ping-pong" like sound. The frequency can be adjusted for different pitches.
+                correctSound.triggerAttackRelease('C4', '8n'); // 'C4' for the first part of the sound
+                // A slightly higher pitch for the second part of the "ping-pong" sound
+                setTimeout(() => {
+                    correctSound.triggerAttackRelease('G4', '8n');
+                }, 100); // Short delay for the "pong" part
+                showHanamaruImage(); // Show the Hanamaru image
+                patterns.splice(idx, 1); // Remove the cleared pattern
+                clearedPairs.push(userPair); // Add to cleared pairs
+                // Start next round after a short delay
+                setTimeout(() => {
+                    messageP.textContent = '';
+                    startGameRound();
+                }, 1200);
+            } else {
+                // Incorrect answer
+                messageP.textContent = 'ちがいます。もういちどかんがえてみてね。';
+            }
+        });
+
+        /**
+         * Resets the game to its initial state, showing the title screen.
+         */
+        function resetGame() {
+            gameDiv.style.display = 'none'; // Hide game screen
+            titleDiv.style.display = 'block'; // Show title screen
+            startBtn.disabled = true; // Disable start button
+            selectedNumber = 0; // Reset selected number
+            // Remove 'selected' class from all number buttons
+            document.querySelectorAll('#numberButtons button').forEach(b => b.classList.remove('selected'));
+        }
+
+        // Touch event handling for dragging apples on mobile
+        let touchedApple = null; // Stores the currently touched apple element
+
+        /**
+         * Handles the touchstart event for apples.
+         * @param {Event} ev - The touchstart event.
+         */
+        function touchStart(ev) {
+            ev.preventDefault(); // Prevent default scrolling/zooming
+            touchedApple = ev.target; // Set the touched apple
+            // Add event listeners for touchmove and touchend
+            document.addEventListener('touchmove', touchMove, { passive: false });
+            document.addEventListener('touchend', touchEnd);
+            touchedApple.classList.add('dragging'); // Add dragging class for visual feedback
+        }
+
+        /**
+         * Handles the touchmove event for apples, updating their position.
+         * @param {Event} ev - The touchmove event.
+         */
+        function touchMove(ev) {
+            if (!touchedApple) return; // Do nothing if no apple is being touched
+            const touch = ev.touches[0]; // Get the first touch point
+            touchedApple.style.position = 'absolute'; // Position absolutely for dragging
+            // Adjust position based on touch coordinates, offsetting by half apple size
+            touchedApple.style.left = (touch.clientX - touchedApple.offsetWidth / 2) + 'px';
+            touchedApple.style.top = (touch.clientY - touchedApple.offsetHeight / 2) + 'px';
+            touchedApple.style.zIndex = 1000; // Bring to front
+        }
+
+        /**
+         * Handles the touchend event, dropping the apple into a basket if over one.
+         * @param {Event} ev - The touchend event.
+         */
+        function touchEnd(ev) {
+            if (!touchedApple) return; // Do nothing if no apple was touched
+            const baskets = [basket1, basket2]; // Array of baskets
+            const touch = ev.changedTouches[0]; // Get the touch point that ended
+
+            let droppedInBasket = false;
+            baskets.forEach(basket => {
+                const rect = basket.getBoundingClientRect(); // Get basket's position and size
+                // Check if the touch release point is within the basket's bounds
+                if (touch.clientX > rect.left && touch.clientX < rect.right &&
+                    touch.clientY > rect.top && touch.clientY < rect.bottom) {
+                    basket.appendChild(touchedApple); // Move apple to basket
+                    droppedInBasket = true;
+                }
+            });
+
+            // Reset apple's style and state after drop
+            touchedApple.style.position = 'static'; // Reset position
+            touchedApple.style.left = ''; // Clear left style
+            touchedApple.style.top = ''; // Clear top style
+            touchedApple.style.zIndex = ''; // Clear z-index
+            touchedApple.classList.remove('dragging'); // Remove dragging class
+            touchedApple = null; // Clear touched apple reference
+
+            // Remove touch event listeners
+            document.removeEventListener('touchmove', touchMove);
+            document.removeEventListener('touchend', touchEnd);
+        }
+
+        // Fireworks animation logic
+        /**
+         * Starts the fireworks animation.
+         */
+        function startFireworks() {
+            fireworksCanvas.width = window.innerWidth;
+            fireworksCanvas.height = window.innerHeight;
+            fireworksCanvas.style.backgroundColor = 'black'; // Set fireworks canvas background to opaque black
+            // Ensure completeOverlay is visible and on top
+            completeOverlay.style.display = 'flex'; // Make sure it's displayed
+            completeOverlay.style.zIndex = '1002'; // Ensure it's above the fireworks canvas
+            animationId = requestAnimationFrame(animate); // Start animation loop
+        }
+
+        /**
+         * Stops the fireworks animation and clears the canvas.
+         */
+        function stopFireworks() {
+            cancelAnimationFrame(animationId); // Stop animation loop
+            ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height); // Clear canvas
+            fireworks = []; // Clear fireworks array
+            fireworksCanvas.style.backgroundColor = 'transparent'; // Reset fireworks canvas background to transparent
+            completeOverlay.style.display = 'none'; // Hide the overlay when fireworks stop
+        }
+
+        /**
+         * The main animation loop for fireworks.
+         */
+        function animate() {
+            // Clear the entire canvas in each frame to remove trails and make fireworks crisp
+            ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+            // Reduce the frequency of new fireworks
+            if (Math.random() < 0.08) createFirework(); // Reduced from 0.20 to 0.08 for less frequent fireworks
+            fireworks.forEach(f => f.update()); // Update each particle's position and alpha
+            fireworks = fireworks.filter(f => f.alpha > 0); // Remove faded particles
+            animationId = requestAnimationFrame(animate); // Request next frame
+        }
+
+        /**
+         * Creates a new firework burst (multiple particles).
+         */
+        function createFirework() {
+            const x = Math.random() * fireworksCanvas.width; // Random X position
+            const y = Math.random() * fireworksCanvas.height / 2; // Random Y position (upper half)
+            // Reduced the number of particles per firework
+            for (let i = 0; i < 30; i++) { // Reduced from 70 to 30 particles
+                fireworks.push(new Particle(x, y));
+            }
+        }
+
+        /**
+         * Represents a single particle in the fireworks animation.
+         */
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                const angle = Math.random() * 2 * Math.PI; // Random direction
+                // Reduced speed range
+                const speed = Math.random() * 4 + 2; // Reduced from (3-6) to (2-4)
+                this.vx = Math.cos(angle) * speed; // X velocity
+                this.vy = Math.sin(angle) * speed; // Y velocity
+                this.alpha = 1; // Initial opacity - particles start fully opaque
+                this.color = `hsl(${Math.random() * 360}, 100%, 85%)`; // Random color
+            }
+            update() {
+                this.x += this.vx; // Update X position
+                this.y += this.vy; // Update Y position
+                ctx.beginPath();
+                // Reduced particle size
+                ctx.arc(this.x, this.y, 5, 0, 2 * Math.PI); // Reduced from 8 to 5 for smaller particles
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.alpha; // Apply current opacity (which is always 1 now)
+                ctx.fill();
+                ctx.globalAlpha = 1; // Reset global alpha
+            }
+        }
+
+        /**
+         * Shows the Hanamaru (flower circle) image for a short duration.
+         */
+        function showHanamaruImage() {
+            hanamaruImg.style.display = 'block'; // Show the image
+            setTimeout(() => {
+                hanamaruImg.style.display = 'none'; // Hide the image after 3 seconds
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
